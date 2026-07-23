@@ -1,0 +1,26 @@
+{
+  "name": "ai-commerce-platform",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d database",
+    "db:down": "docker compose down",
+    "dev": "concurrently -n frontend,backend -c cyan,magenta \"npm run dev --workspace frontend\" \"npm run start:dev --workspace backend\"",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run start:dev --workspace backend",
+    "build": "npm run build --workspace frontend && npm run build --workspace backend",
+    "lint": "npm run lint --workspace frontend && npm run lint --workspace backend",
+    "test": "npm run test --workspace backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20.9.0",
+    "npm": ">=10.0.0"
+  }
+}
