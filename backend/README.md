@@ -28,7 +28,7 @@ The idempotent seed creates customer, admin, and support-agent roles; three deve
 
 ## Authentication
 
-The API accepts its 15-minute JWT from the HTTP-only `access_token` cookie or an `Authorization: Bearer <token>` header.
+Browser authentication uses a 15-minute JWT stored only in the HTTP-only `access_token` cookie. The strategy can also validate an `Authorization: Bearer <token>` header for trusted non-browser integrations, but login and registration do not expose the token in their JSON responses.
 
 | Method | Route | Access |
 | --- | --- | --- |
@@ -38,7 +38,7 @@ The API accepts its 15-minute JWT from the HTTP-only `access_token` cookie or an
 | `GET` | `/api/auth/me` | Authenticated |
 | `GET` | `/api/auth/admin-check` | Admin only |
 
-Set a unique `JWT_SECRET` containing at least 32 random characters in `.env`. Bearer-token clients must discard their token on logout; browser clients have their authentication cookie cleared by the API.
+Set a unique `JWT_SECRET` containing at least 32 random characters in `.env`. Logout clears the browser authentication cookie.
 
 ## Catalog API
 
@@ -121,7 +121,8 @@ Ticket detail and message access is owner-scoped for customers. Staff can claim 
 ## AI shopping assistant
 
 `POST /api/ai/shop-assistant` requires authentication and accepts a message plus
-an optional `sessionId`. Configure `OPENAI_API_KEY` in `.env`; `AI_MODEL`
+an optional `sessionId`. Configure `OPENAI_API_KEY` in `.env`; `AI_MODEL` and
+`AI_REQUEST_TIMEOUT_MS`
 defaults to `gpt-5.6-terra` and can be overridden.
 
 The assistant is grounded in the store database:

@@ -6,9 +6,11 @@ import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   const findUnique = jest.fn();
+  const transaction = jest.fn();
   const signAsync = jest.fn().mockResolvedValue('signed-token');
   const prisma = {
     user: { findUnique },
+    $transaction: transaction,
   } as unknown as PrismaService;
   const jwt = { signAsync } as unknown as JwtService;
   const service = new AuthService(prisma, jwt);
@@ -48,6 +50,45 @@ describe('AuthService', () => {
       email: 'customer@example.com',
       roles: ['customer'],
     });
+  });
+
+  it('registers a customer with cart, wishlist, and customer role', async () => {
+    findUnique.mockResolvedValue(null);
+    const roleUpsert = jest.fn().mockResolvedValue({ id: 'customer-role' });
+    const userCreate = jest.fn().mockResolvedValue({
+      id: 'new-user',
+      email: 'new@example.com',
+      firstName: 'New',
+      lastName: 'Customer',
+      roles: [{ name: 'customer' }],
+    });
+    transaction.mockImplementation((callback: (client: unknown) => unknown) =>
+      callback({
+        role: { upsert: roleUpsert },
+        user: { create: userCreate },
+      }),
+    );
+
+    const result = await service.register({
+      email: 'new@example.com',
+      password: 'Commerce123!',
+      firstName: 'New',
+      lastName: 'Customer',
+    });
+
+    expect(result.user.roles).toEqual(['customer']);
+    expect(userCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // Jest asymmetric matchers are intentionally untyped.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({
+          email: 'new@example.com',
+          cart: { create: {} },
+          wishlist: { create: {} },
+          roles: { connect: { id: 'customer-role' } },
+        }),
+      }),
+    );
   });
 
   it('does not reveal whether an account exists', async () => {

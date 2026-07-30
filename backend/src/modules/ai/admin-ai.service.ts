@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -7,13 +7,13 @@ import {
   SummarizeReviewsDto,
   SummarizeSupportIssuesDto,
 } from './dto/admin-ai.dto';
-import { OpenAiService } from './openai.service';
+import { AI_PROVIDER, AiProvider } from './ai-provider';
 
 @Injectable()
 export class AdminAiService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly ai: OpenAiService,
+    @Inject(AI_PROVIDER) private readonly ai: AiProvider,
   ) {}
 
   generateProductCopy(userId: string, dto: GenerateProductCopyDto) {

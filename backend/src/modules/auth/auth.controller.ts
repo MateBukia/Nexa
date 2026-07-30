@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
+import { RateLimit } from '../../common/security/rate-limit.decorator';
+import { RateLimitGuard } from '../../common/security/rate-limit.guard';
 import { Roles } from '../roles/roles.decorator';
 import { RolesGuard } from '../roles/roles.guard';
 import { AuthService } from './auth.service';
@@ -27,23 +29,27 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @RateLimit(10, 60_000)
+  @UseGuards(RateLimitGuard)
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const session = await this.authService.register(dto);
-    this.setAuthCookie(response, session.accessToken);
+    const { accessToken, ...session } = await this.authService.register(dto);
+    this.setAuthCookie(response, accessToken);
     return session;
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
+  @RateLimit(10, 60_000)
+  @UseGuards(RateLimitGuard)
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const session = await this.authService.login(dto);
-    this.setAuthCookie(response, session.accessToken);
+    const { accessToken, ...session } = await this.authService.login(dto);
+    this.setAuthCookie(response, accessToken);
     return session;
   }
 

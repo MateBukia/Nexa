@@ -1,30 +1,64 @@
-import type { Product } from "./catalog";
+export type ShoppingIntent =
+  | "PRODUCT_SEARCH"
+  | "RECOMMENDATION"
+  | "COMPARISON"
+  | "PRODUCT_DETAILS"
+  | "AVAILABILITY"
+  | "STORE_INFORMATION";
+
+export interface ShoppingRecommendation {
+  productId: string;
+  slug: string;
+  name: string;
+  price: string;
+  imageUrl?: string;
+  url: string;
+  reason: string;
+}
 
 export interface ShoppingAssistantResponse {
-  sessionId: string;
+  sessionId: string | null;
   message: string;
-  clarificationNeeded: boolean;
+  requiresClarification: boolean;
   filters: {
-    terms: string[];
+    intent: ShoppingIntent;
+    keywords: string[];
     category: string | null;
     minPrice: number | null;
     maxPrice: number | null;
-    attributes: string[];
+    color: string | null;
+    size: string | null;
+    brand: string | null;
   };
-  recommendations: Product[];
+  recommendations: ShoppingRecommendation[];
 }
 
 export interface SupportAssistantResponse {
-  sessionId: string;
+  sessionId: string | null;
   message: string;
   escalationNeeded: boolean;
   relatedOrderId: string | null;
+  requiresTicketConfirmation: boolean;
+  ticketProposal: {
+    title: string;
+    conversationSummary: string;
+    suggestedCategory: string;
+    priority: string;
+    relatedOrderId: string | null;
+  } | null;
   ticket: {
     id: string;
     ticketNumber: string;
     subject: string;
     status: string;
   } | null;
+}
+
+export interface ConfirmedSupportTicket {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  status: string;
 }
 
 export interface ProductCopyResponse {

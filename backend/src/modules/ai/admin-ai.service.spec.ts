@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AdminAiService } from './admin-ai.service';
-import { OpenAiService } from './openai.service';
+import { AiProvider } from './ai-provider';
 
 describe('AdminAiService', () => {
   const productFindUnique = jest.fn();
@@ -18,7 +18,7 @@ describe('AdminAiService', () => {
     model: 'test-model',
     summarizeReviews,
     draftSupportReply,
-  } as unknown as OpenAiService;
+  } as unknown as AiProvider;
   const service = new AdminAiService(prisma, ai);
 
   beforeEach(() => jest.clearAllMocks());

@@ -1,6 +1,7 @@
 import { apiRequest } from "@/lib/api";
 import type {
   ProductCopyResponse,
+  ConfirmedSupportTicket,
   ReviewSummaryResponse,
   ShoppingAssistantResponse,
   SupportAssistantResponse,
@@ -18,6 +19,11 @@ export const aiApi = {
     apiRequest<SupportAssistantResponse>("/ai/support-assistant", {
       method: "POST",
       body: JSON.stringify({ message, sessionId }),
+    }),
+  confirmSupportTicket: (sessionId: string) =>
+    apiRequest<ConfirmedSupportTicket>("/ai/support-assistant/confirm-ticket", {
+      method: "POST",
+      body: JSON.stringify({ sessionId }),
     }),
   productCopy: (notes: string, tone?: string) =>
     apiRequest<ProductCopyResponse>("/ai/generate-product-copy", {

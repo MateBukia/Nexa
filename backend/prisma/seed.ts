@@ -145,12 +145,17 @@ async function main() {
       categoryId: computers.id,
       name: 'ForgeBook Pro 14',
       slug: 'forgebook-pro-14',
-      description: 'A portable development laptop with ample memory and battery life.',
+      description:
+        'A portable development laptop with ample memory and battery life.',
       shortDescription: 'A capable laptop for software development.',
       status: 'ACTIVE',
       brand: 'Forge',
       tags: ['laptop', 'coding', 'developer'],
-      attributes: { display: '14 inch', memory: '16 GB', storage: '512 GB SSD' },
+      attributes: {
+        display: '14 inch',
+        memory: '16 GB',
+        storage: '512 GB SSD',
+      },
       isFeatured: true,
       images: {
         create: {
@@ -170,6 +175,161 @@ async function main() {
     },
   });
 
+  const additionalCategories = await Promise.all(
+    [
+      ['phones', 'Phones', 'Smartphones and mobile accessories.'],
+      ['audio', 'Audio', 'Headphones, speakers, and home audio.'],
+      ['gaming', 'Gaming', 'Gaming hardware and accessories.'],
+      ['home', 'Home', 'Useful products for every room.'],
+      ['outdoors', 'Outdoors', 'Equipment for travel and outdoor activities.'],
+      ['fitness', 'Fitness', 'Training and active lifestyle equipment.'],
+      [
+        'accessories',
+        'Accessories',
+        'Everyday personal and technology accessories.',
+      ],
+      ['office', 'Office', 'Products for productive workspaces.'],
+    ].map(([slug, name, description]) =>
+      prisma.category.upsert({
+        where: { slug },
+        update: {},
+        create: { slug, name, description },
+      }),
+    ),
+  );
+
+  const catalogCategories = [footwear, computers, ...additionalCategories];
+  const productTypes = [
+    'Runner',
+    'Laptop',
+    'Phone',
+    'Headphones',
+    'Controller',
+    'Lamp',
+    'Backpack',
+    'Fitness Kit',
+    'Smart Watch',
+    'Office Chair',
+  ];
+  const adjectives = [
+    'Essential',
+    'Classic',
+    'Urban',
+    'Pro',
+    'Compact',
+    'Premium',
+    'Active',
+    'Modern',
+    'Everyday',
+    'Studio',
+  ];
+  const brands = ['Nexa', 'Forge', 'Orbit', 'Summit', 'Pulse'];
+  const colors = ['Black', 'White', 'Blue', 'Green', 'Red'];
+  const targetProductCount = 500;
+  const nonGeneratedProductCount = await prisma.product.count({
+    where: { slug: { not: { startsWith: 'catalog-product-' } } },
+  });
+  const generatedProductCount = Math.max(
+    0,
+    targetProductCount - nonGeneratedProductCount,
+  );
+  const batchSize = 25;
+
+  for (
+    let batchStart = 0;
+    batchStart < generatedProductCount;
+    batchStart += batchSize
+  ) {
+    const batchEnd = Math.min(batchStart + batchSize, generatedProductCount);
+
+    await Promise.all(
+      Array.from({ length: batchEnd - batchStart }, (_, batchOffset) => {
+        const sequence = batchStart + batchOffset + 3;
+        const category = catalogCategories[sequence % catalogCategories.length];
+        const productType = productTypes[sequence % productTypes.length];
+        const adjective =
+          adjectives[
+            Math.floor(sequence / productTypes.length) % adjectives.length
+          ];
+        const brand = brands[sequence % brands.length];
+        const color = colors[sequence % colors.length];
+        const paddedSequence = sequence.toString().padStart(3, '0');
+        const name = `${brand} ${adjective} ${productType} ${paddedSequence}`;
+        const slug = `catalog-product-${paddedSequence}`;
+        const basePrice = 40 + ((sequence * 37) % 1960);
+
+        return prisma.product.upsert({
+          where: { slug },
+          update: {},
+          create: {
+            categoryId: category.id,
+            name,
+            slug,
+            description: `${name} is a dependable ${productType.toLowerCase()} designed for daily use.`,
+            shortDescription: `${adjective} ${productType.toLowerCase()} by ${brand}.`,
+            status: 'ACTIVE',
+            brand,
+            tags: [
+              category.slug,
+              productType.toLowerCase().replace(' ', '-'),
+              color.toLowerCase(),
+            ],
+            attributes: { color, collection: adjective },
+            isFeatured: sequence % 25 === 0,
+            images: {
+              create: {
+                url: `https://picsum.photos/seed/catalog-${paddedSequence}/800/800`,
+                altText: name,
+              },
+            },
+            variants: {
+              create: [
+                {
+                  sku: `CAT-${paddedSequence}-STD`,
+                  name: `${color} / Standard`,
+                  price: basePrice.toFixed(2),
+                  attributes: { color, size: 'Standard' },
+                  inventory: {
+                    create: {
+                      quantity: (sequence * 13) % 80,
+                      lowStockThreshold: 5,
+                    },
+                  },
+                },
+                {
+                  sku: `CAT-${paddedSequence}-PLUS`,
+                  name: `${color} / Plus`,
+                  price: (basePrice * 1.2).toFixed(2),
+                  attributes: { color, size: 'Plus' },
+                  inventory: {
+                    create: {
+                      quantity: (sequence * 17) % 60,
+                      lowStockThreshold: 5,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        });
+      }),
+    );
+  }
+
+  const surplusGeneratedSlugs = Array.from(
+    { length: Math.max(0, 498 - generatedProductCount) },
+    (_, index) =>
+      `catalog-product-${(generatedProductCount + index + 3)
+        .toString()
+        .padStart(3, '0')}`,
+  );
+
+  if (surplusGeneratedSlugs.length > 0) {
+    await prisma.product.deleteMany({
+      where: { slug: { in: surplusGeneratedSlugs } },
+    });
+  }
+
   await prisma.coupon.upsert({
     where: { code: 'WELCOME10' },
     update: {},
@@ -184,7 +344,12 @@ async function main() {
     },
   });
 
-  console.info(`Seeded products: ${sneakers.name}, ${laptop.name}`);
+  const totalProductCount = await prisma.product.count();
+
+  console.info(
+    `Seeded the catalog up to ${targetProductCount} products, including ${sneakers.name} and ${laptop.name}.`,
+  );
+  console.info(`Products currently in database: ${totalProductCount}`);
   console.info('Development password for seeded users: Commerce123!');
 }
 

@@ -8,6 +8,13 @@ interface Message {
   role: "user" | "assistant";
   text: string;
   ticket?: { id: string; ticketNumber: string } | null;
+  ticketProposal?: {
+    title: string;
+    conversationSummary: string;
+    suggestedCategory: string;
+    priority: string;
+    relatedOrderId: string | null;
+  } | null;
 }
 
 const examples = ["Where is my latest order?", "How do I return a product?"];
@@ -33,14 +40,43 @@ export function SupportAssistant() {
     setError(null);
     try {
       const response = await aiApi.support(message, sessionId);
-      setSessionId(response.sessionId);
+      setSessionId(response.sessionId ?? undefined);
       setMessages((current) => [
         ...current,
-        { role: "assistant", text: response.message, ticket: response.ticket },
+        {
+          role: "assistant",
+          text: response.message,
+          ticket: response.ticket,
+          ticketProposal: response.ticketProposal,
+        },
       ]);
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Support AI is unavailable.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmTicket(messageIndex: number) {
+    if (!sessionId || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const ticket = await aiApi.confirmSupportTicket(sessionId);
+      setMessages((current) =>
+        current.map((message, index) =>
+          index === messageIndex
+            ? { ...message, ticket, ticketProposal: null }
+            : message,
+        ),
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "The ticket could not be created.",
       );
     } finally {
       setLoading(false);
@@ -76,6 +112,26 @@ export function SupportAssistant() {
             key={`${message.role}-${index}`}
           >
             <p>{message.text}</p>
+            {message.ticketProposal && (
+              <div className="mt-3 rounded-lg border border-emerald-300/30 bg-slate-950/30 p-3">
+                <p className="font-semibold">{message.ticketProposal.title}</p>
+                <p className="mt-1 text-xs leading-5 text-emerald-100">
+                  {message.ticketProposal.conversationSummary}
+                </p>
+                <p className="mt-2 text-xs text-emerald-200">
+                  {message.ticketProposal.suggestedCategory} ·{" "}
+                  {message.ticketProposal.priority}
+                </p>
+                <button
+                  className="mt-3 rounded-lg bg-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-950 disabled:opacity-50"
+                  disabled={loading}
+                  onClick={() => void confirmTicket(index)}
+                  type="button"
+                >
+                  Confirm and create ticket
+                </button>
+              </div>
+            )}
             {message.ticket && (
               <Link
                 className="mt-2 inline-block font-semibold text-emerald-300 underline"

@@ -1,9 +1,20 @@
+export type ShoppingIntent =
+  | 'PRODUCT_SEARCH'
+  | 'RECOMMENDATION'
+  | 'COMPARISON'
+  | 'PRODUCT_DETAILS'
+  | 'AVAILABILITY'
+  | 'STORE_INFORMATION';
+
 export interface ShoppingFilters {
-  terms: string[];
+  intent: ShoppingIntent;
+  keywords: string[];
   category: string | null;
   minPrice: number | null;
   maxPrice: number | null;
-  attributes: string[];
+  color: string | null;
+  size: string | null;
+  brand: string | null;
 }
 
 export interface GroundedProduct {
@@ -21,8 +32,18 @@ export interface GroundedProduct {
 
 export interface ShoppingAnswer {
   answer: string;
-  recommendedProductIds: string[];
+  recommendations: { productId: string; reason: string }[];
   clarificationNeeded: boolean;
+}
+
+export interface ShoppingRecommendation {
+  productId: string;
+  slug: string;
+  name: string;
+  price: string;
+  imageUrl?: string;
+  url: string;
+  reason: string;
 }
 
 export interface SupportAnswer {
@@ -30,6 +51,9 @@ export interface SupportAnswer {
   escalationNeeded: boolean;
   escalationReason: string | null;
   ticketSubject: string | null;
+  conversationSummary: string | null;
+  suggestedCategory:
+    'SHIPPING' | 'RETURNS' | 'PAYMENT' | 'ACCOUNT' | 'ORDER' | 'OTHER';
   priority: 'LOW' | 'NORMAL' | 'HIGH';
   relatedOrderId: string | null;
 }
