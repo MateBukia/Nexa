@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { AiProvider } from './ai-provider';
+import { LocalShoppingAssistantService } from './local-shopping-assistant.service';
 import { ShoppingAssistantService } from './shopping-assistant.service';
 
 describe('ShoppingAssistantService', () => {
@@ -37,7 +37,7 @@ describe('ShoppingAssistantService', () => {
     model: 'test-model',
     extractShoppingFilters,
     composeShoppingAnswer,
-  } as unknown as AiProvider;
+  } as unknown as LocalShoppingAssistantService;
   const service = new ShoppingAssistantService(prisma, ai);
 
   beforeEach(() => jest.clearAllMocks());
@@ -165,7 +165,6 @@ describe('ShoppingAssistantService', () => {
       expect.any(Array),
       expect.any(Object),
       [],
-      expect.any(String),
     );
   });
 

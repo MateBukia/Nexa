@@ -1,10 +1,9 @@
 import {
   ForbiddenException,
-  Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash } from 'node:crypto';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -13,13 +12,15 @@ import {
   ShoppingRecommendation,
 } from './ai.types';
 import { ShopAssistantDto } from './dto/shop-assistant.dto';
-import { AI_PROVIDER, AiProvider } from './ai-provider';
+import { LocalShoppingAssistantService } from './local-shopping-assistant.service';
 
 @Injectable()
 export class ShoppingAssistantService {
+  private readonly logger = new Logger(ShoppingAssistantService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(AI_PROVIDER) private readonly ai: AiProvider,
+    private readonly ai: LocalShoppingAssistantService,
   ) {}
 
   async chat(userId: string | null, dto: ShopAssistantDto) {
@@ -27,6 +28,11 @@ export class ShoppingAssistantService {
       return await this.chatWithProvider(userId, dto);
     } catch (error: unknown) {
       if (error instanceof ForbiddenException) throw error;
+
+      this.logger.error(
+        `Shopping assistant failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined,
+      );
 
       return this.fallbackResponse(
         'I could not complete the intelligent catalogue search right now. You can still browse the catalogue, or try again with a category, budget, colour, size, or brand.',
@@ -55,13 +61,9 @@ export class ShoppingAssistantService {
       },
     });
 
-    const safetyIdentifier = createHash('sha256')
-      .update(`nexa:${userId ?? `anonymous:${session.id}`}`)
-      .digest('hex');
     const extracted = await this.ai.extractShoppingFilters(
       dto.message,
       history,
-      safetyIdentifier,
     );
     const filters = this.normalizeFilters(extracted);
     const catalogProducts = await this.searchCatalog(filters);
@@ -73,7 +75,6 @@ export class ShoppingAssistantService {
       history,
       filters,
       groundedProducts,
-      safetyIdentifier,
     );
 
     const productById = new Map(
@@ -266,6 +267,11 @@ export class ShoppingAssistantService {
               })),
               ...terms.map((term) => ({
                 brand: { contains: term, mode: 'insensitive' as const },
+              })),
+              ...terms.map((term) => ({
+                category: {
+                  name: { contains: term, mode: 'insensitive' as const },
+                },
               })),
               { tags: { hasSome: terms } },
             ],

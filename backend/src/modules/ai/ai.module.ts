@@ -4,6 +4,7 @@ import { AiController } from './ai.controller';
 import { AdminAiService } from './admin-ai.service';
 import { AI_PROVIDER } from './ai-provider';
 import { OpenAiService } from './openai.service';
+import { LocalShoppingAssistantService } from './local-shopping-assistant.service';
 import { ShoppingAssistantService } from './shopping-assistant.service';
 import { SupportAssistantService } from './support-assistant.service';
 
@@ -12,6 +13,7 @@ import { SupportAssistantService } from './support-assistant.service';
   controllers: [AiController],
   providers: [
     OpenAiService,
+    LocalShoppingAssistantService,
     { provide: AI_PROVIDER, useExisting: OpenAiService },
     ShoppingAssistantService,
     SupportAssistantService,

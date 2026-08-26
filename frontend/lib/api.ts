@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+// Keep browser requests same-origin. Next.js proxies /api to the Nest backend,
+// so the storefront also works when opened through a LAN hostname or IP address.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 interface ApiErrorBody {
   message?: string | string[];

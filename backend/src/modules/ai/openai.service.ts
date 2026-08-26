@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +23,7 @@ import {
 
 @Injectable()
 export class OpenAiService implements AiProvider {
+  private readonly logger = new Logger(OpenAiService.name);
   private readonly client: OpenAI | null;
   readonly model: string;
 
@@ -344,6 +346,16 @@ export class OpenAiService implements AiProvider {
     } catch (error: unknown) {
       if (error instanceof HttpException) {
         throw error;
+      }
+      if (error instanceof OpenAI.APIError) {
+        this.logger.error(
+          `OpenAI request failed (status=${error.status ?? 'unknown'}, code=${error.code ?? 'unknown'}, type=${error.type ?? 'unknown'}, requestId=${error.requestID ?? 'unknown'})`,
+        );
+      } else {
+        this.logger.error(
+          `OpenAI request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          error instanceof Error ? error.stack : undefined,
+        );
       }
       if (error instanceof OpenAI.RateLimitError) {
         throw new HttpException(

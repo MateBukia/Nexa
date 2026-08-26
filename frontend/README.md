@@ -6,7 +6,10 @@ Next.js App Router application using React, TypeScript, and Tailwind CSS.
 npm run dev --workspace frontend
 ```
 
-The browser-facing API base URL is configured through `NEXT_PUBLIC_API_URL` in `.env.local`.
+Browser requests use the same-origin `/api` path, which Next.js proxies to
+`BACKEND_API_URL` (default: `http://localhost:4000/api`). This avoids CORS and
+works when the storefront is opened through a LAN hostname or IP address.
+`NEXT_PUBLIC_API_URL` can optionally bypass the proxy.
 
 ## Storefront routes
 

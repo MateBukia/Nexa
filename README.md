@@ -159,7 +159,8 @@ Run applications separately with `npm run dev:frontend` and `npm run dev:backend
 
 | Variable              | Required | Purpose                                                            |
 | --------------------- | -------- | ------------------------------------------------------------------ |
-| `NEXT_PUBLIC_API_URL` | Yes      | Browser-visible API base URL, normally `http://localhost:4000/api` |
+| `BACKEND_API_URL`     | No       | Next.js proxy target; defaults to `http://localhost:4000/api`      |
+| `NEXT_PUBLIC_API_URL` | No       | Optional browser-visible URL that bypasses the same-origin proxy   |
 
 The committed `.env.example` files contain development examples only. Real `.env` files are ignored by Git.
 
